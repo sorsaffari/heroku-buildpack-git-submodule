@@ -12,11 +12,6 @@ if [[ -z $GIT_REPO_URL ]]; then
     exit 1
 fi
 
-if [[ -z $GIT_SSH_KEY ]]; then
-    echo "Did you forget to set GIT_SSH_KEY?"
-    exit 1
-fi
-
 # make sure we're in the root of the app dir
 cd "$APP_DIR"
 
@@ -34,18 +29,21 @@ echo ".gitmodules" > .git/info/sparse-checkout
 # add the repo as a remote and fetch the repo's history
 git remote add origin "$GIT_REPO_URL"
 
-# install the ssh key
-mkdir -p ~/.ssh
-ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2> /dev/null
-cat "$ENV_DIR/GIT_SSH_KEY" > ~/.ssh/id_rsa
-chmod 600 ~/.ssh/id_rsa
+# handle the ssh key if provided
+if [[ $GIT_SSH_KEY ]]; then
+    # install the ssh key
+    mkdir -p ~/.ssh
+    ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2> /dev/null
+    cat "$ENV_DIR/GIT_SSH_KEY" > ~/.ssh/id_rsa
+    chmod 600 ~/.ssh/id_rsa
 
-# ignore/hide ssh warnings
-echo "Host *" >> ~/.ssh/config
-echo "   StrictHostKeyChecking no" >> ~/.ssh/config
-echo "   UserKnownHostsFile /dev/null" >> ~/.ssh/config
-echo "   LogLevel ERROR" >> ~/.ssh/config
-echo "-----> Installed SSH key from GIT_SSH_KEY"
+    # ignore/hide ssh warnings
+    echo "Host *" >> ~/.ssh/config
+    echo "   StrictHostKeyChecking no" >> ~/.ssh/config
+    echo "   UserKnownHostsFile /dev/null" >> ~/.ssh/config
+    echo "   LogLevel ERROR" >> ~/.ssh/config
+    echo "-----> Installed SSH key from GIT_SSH_KEY"
+fi
 
 # checkout the revision that's being deployed
 git fetch -q --depth 1 origin -a > /dev/null
